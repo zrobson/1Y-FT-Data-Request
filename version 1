@@ -86,12 +86,10 @@ LEFT JOIN DM_ALUMNI.DIM_CONSTITUENT DC ON mv_entity.donor_id = DC.CONSTITUENT_DO
 LEFT JOIN DM_ALUMNI.DIM_ORGANIZATION DCO ON mv_entity.donor_id = DCO.ORGANIZATION_DONOR_ID
 LEFT JOIN DM_ALUMNI.DIM_STRATEGY DSTRAT ON DC.CONSTITUENT_PRIMARY_PROSPECT_STRATEGY_RECORD_ID = DSTRAT.STRATEGY_RECORD_ID
 LEFT JOIN DM_ALUMNI.DIM_STRATEGY ODSTRAT ON DCO.ORGANIZATION_PRIMARY_PROSPECT_STRATEGY_RECORD_ID = ODSTRAT.STRATEGY_RECORD_ID
-where (mv_entity_ksm_degrees.degrees_concat like '%2015 MBA Kellogg KGS1Y%'
-     or mv_entity_ksm_degrees.degrees_concat like '%2016 MBA Kellogg KGS1Y%'
-     or mv_entity_ksm_degrees.degrees_concat like '%2017 MBA Kellogg KGS1Y%'
-     or mv_entity_ksm_degrees.degrees_concat like '%2018 MBA Kellogg KGS1Y%'
-     or mv_entity_ksm_degrees.degrees_concat like '%2019 MBA Kellogg KGS1Y%'
-     or mv_entity_ksm_degrees.degrees_concat like '%2020 MBA Kellogg KGS1Y%')
+where (mv_entity_ksm_degrees.degrees_concat like '%2021 MBA Kellogg KGS1Y%'
+     or mv_entity_ksm_degrees.degrees_concat like '%2022 MBA Kellogg KGS1Y%'
+     or mv_entity_ksm_degrees.degrees_concat like '%2023 MBA Kellogg KGS1Y%'
+     or mv_entity_ksm_degrees.degrees_concat like '%2024 MBA Kellogg KGS1Y%')
 and mv_entity_ksm_degrees.program not in ('STUDENT', 'NONGRAD', 'UNK') -- not student, nongrad, unknown
 and mv_entity.primary_record_type = 'Alum' -- alumni
 and mv_special_handling.no_contact is null -- no contact
