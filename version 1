@@ -49,6 +49,7 @@ inner join a on c.id = a.ucinn_ascendv2__contact__c)
 select distinct mv_entity.donor_id
       ,mv_entity.first_name
       ,mv_entity.last_name
+      ,mv_entity.ethnicity
       ,MV_ENTITY.is_deceased_indicator
 --      ,mv_entity.primary_record_type
 --      ,mv_entity.household_primary
@@ -85,20 +86,16 @@ LEFT JOIN DM_ALUMNI.DIM_CONSTITUENT DC ON mv_entity.donor_id = DC.CONSTITUENT_DO
 LEFT JOIN DM_ALUMNI.DIM_ORGANIZATION DCO ON mv_entity.donor_id = DCO.ORGANIZATION_DONOR_ID
 LEFT JOIN DM_ALUMNI.DIM_STRATEGY DSTRAT ON DC.CONSTITUENT_PRIMARY_PROSPECT_STRATEGY_RECORD_ID = DSTRAT.STRATEGY_RECORD_ID
 LEFT JOIN DM_ALUMNI.DIM_STRATEGY ODSTRAT ON DCO.ORGANIZATION_PRIMARY_PROSPECT_STRATEGY_RECORD_ID = ODSTRAT.STRATEGY_RECORD_ID
-where mv_entity_ksm_degrees.program = 'FT-1Y'
-and mv_entity_ksm_degrees.first_masters_year in (1962
-                                                ,1963
-                                                ,1964
-                                                ,1965
-                                                ,1966
-                                                ,1967
-                                                ,1968
-                                                ,1969
-                                                ,1970)
+where (mv_entity_ksm_degrees.degrees_concat like '%2015 MBA Kellogg KGS1Y%'
+     or mv_entity_ksm_degrees.degrees_concat like '%2016 MBA Kellogg KGS1Y%'
+     or mv_entity_ksm_degrees.degrees_concat like '%2017 MBA Kellogg KGS1Y%'
+     or mv_entity_ksm_degrees.degrees_concat like '%2018 MBA Kellogg KGS1Y%'
+     or mv_entity_ksm_degrees.degrees_concat like '%2019 MBA Kellogg KGS1Y%'
+     or mv_entity_ksm_degrees.degrees_concat like '%2020 MBA Kellogg KGS1Y%')
 and mv_entity_ksm_degrees.program not in ('STUDENT', 'NONGRAD', 'UNK') -- not student, nongrad, unknown
 and mv_entity.primary_record_type = 'Alum' -- alumni
 and mv_special_handling.no_contact is null -- no contact
 and mv_special_handling.no_email_ind is null -- no email
 and mv_entity.is_deceased_indicator = 'N' -- not deceased
 --and mv_entity.lost_indicator = 'N' -- not lost
-order by mv_entity_ksm_degrees.first_masters_year asc
+order by mv_entity_ksm_degrees.degrees_concat, mv_entity_ksm_degrees.first_masters_year asc
