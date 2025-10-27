@@ -1,0 +1,104 @@
+/*
+Report request - 1Y Alumni from the first 5 years of the program
+
+
+First name
+, last name, 
+job title
+, organization
+, location
+, degree year
+, program
+, prospect manager
+, LinkedIn
+, lifetime giving
+, if they have attended Reunion or other big events 
+(examples include: global women’s summit, global leaders symposium in Miami, with gratitude, etc.) in the past 5 years.
+
+*/
+
+with employ as (
+select distinct
+c.UCINN_ASCENDV2__RELATED_CONTACT_DONOR_ID_FORMULA__C as donor_id,
+max (c.ap_is_primary_employment__c) keep (dense_rank First Order by c.ucinn_ascendv2__start_date__c desc) as primary_employ_ind,
+max (c.ucinn_ascendv2__job_title__c) keep (dense_rank first order by c.ucinn_ascendv2__start_date__c desc) as primary_job_title,
+max (c.UCINN_ASCENDV2__RELATED_ACCOUNT_NAME_FORMULA__C) keep (dense_rank first order by c.ucinn_ascendv2__start_date__c desc) as primary_employer
+from stg_alumni.ucinn_ascendv2__Affiliation__c c
+where c.ap_is_primary_employment__c = 'true'
+group by c.UCINN_ASCENDV2__RELATED_CONTACT_DONOR_ID_FORMULA__C
+)
+
+--- Current Linkedin Addresses
+, a as (select
+stg_alumni.ucinn_ascendv2__social_media__c.ucinn_ascendv2__contact__c,
+max (stg_alumni.ucinn_ascendv2__social_media__c.ucinn_ascendv2__url__c) keep (dense_rank first order by stg_alumni.ucinn_ascendv2__social_media__c.lastmodifieddate) as Linkedin_address
+from stg_alumni.ucinn_ascendv2__social_media__c
+where stg_alumni.ucinn_ascendv2__social_media__c.ap_status__c like '%Current%'
+group BY stg_alumni.ucinn_ascendv2__social_media__c.ucinn_ascendv2__contact__c
+)
+
+-- max(linkedin_url) keep dense_rank first ...
+--- Using Keep Dense Rank
+
+ ,l as (select distinct c.ucinn_ascendv2__donor_id__c,
+c.ucinn_ascendv2__first_and_last_name_formula__c,
+a.linkedin_address
+from stg_alumni.contact c
+inner join a on c.id = a.ucinn_ascendv2__contact__c)
+
+select distinct mv_entity.donor_id
+      ,mv_entity.first_name
+      ,mv_entity.last_name
+      ,MV_ENTITY.is_deceased_indicator
+--      ,mv_entity.primary_record_type
+--      ,mv_entity.household_primary
+--      ,mv_entity.is_deceased_indicator
+      ,mv_entity_ksm_degrees.first_masters_year
+      ,mv_entity_ksm_degrees.program
+--      ,mv_entity_ksm_degrees.program_group
+      ,mv_entity_ksm_degrees.degrees_concat
+      ,mv_entity.preferred_address_city
+      ,mv_entity.preferred_address_state
+      ,mv_entity.preferred_address_country
+      ,employ.primary_job_title
+      ,employ.primary_employer
+      --,DC.INDUSTRIES
+      ,mv_ksm_giving_summary.ngc_lifetime
+      ,l.linkedin_address
+      ,mv_assignments.prospect_manager_name
+      ,mv_assignments.lagm_name
+      ,mv_special_handling.no_email_ind
+      ,mv_special_handling.no_contact
+      --,CASE WHEN ME.PERSON_OR_ORG = 'O' THEN ODSTRAT.STRATEGY_PRIMARY_RELATION_UNIVERSITY_OVERALL_RATING
+     --ELSE DSTRAT.STRATEGY_PRIMARY_RELATION_UNIVERSITY_OVERALL_RATING END AS OFFICER_RATING
+  --,CASE WHEN ME.PERSON_OR_ORG = 'O' THEN ODSTRAT.STRATEGY_PRIMARY_RELATION_RESEARCH_EVALUATION
+     --ELSE DSTRAT.STRATEGY_PRIMARY_RELATION_RESEARCH_EVALUATION END AS EVALUATION_RATING
+from mv_entity
+left join mv_ksm_giving_summary on mv_ksm_giving_summary.household_id = mv_entity.household_id_ksm
+left join mv_assignments on mv_assignments.household_id_ksm = mv_entity.household_id_ksm
+left join employ on employ.donor_id = mv_entity.donor_id
+inner join mv_entity_ksm_degrees on mv_entity_ksm_degrees.donor_id = mv_entity.donor_id
+left join l on l.ucinn_ascendv2__donor_id__c = mv_entity.donor_id
+left join mv_special_handling on mv_special_handling.donor_id = mv_entity.donor_id
+left join mv_households ME on ME.household_id = mv_entity.household_id
+LEFT JOIN DM_ALUMNI.DIM_CONSTITUENT DC ON mv_entity.donor_id = DC.CONSTITUENT_DONOR_ID
+LEFT JOIN DM_ALUMNI.DIM_ORGANIZATION DCO ON mv_entity.donor_id = DCO.ORGANIZATION_DONOR_ID
+LEFT JOIN DM_ALUMNI.DIM_STRATEGY DSTRAT ON DC.CONSTITUENT_PRIMARY_PROSPECT_STRATEGY_RECORD_ID = DSTRAT.STRATEGY_RECORD_ID
+LEFT JOIN DM_ALUMNI.DIM_STRATEGY ODSTRAT ON DCO.ORGANIZATION_PRIMARY_PROSPECT_STRATEGY_RECORD_ID = ODSTRAT.STRATEGY_RECORD_ID
+where mv_entity_ksm_degrees.program = 'FT-1Y'
+and mv_entity_ksm_degrees.first_masters_year in (1962
+                                                ,1963
+                                                ,1964
+                                                ,1965
+                                                ,1966
+                                                ,1967
+                                                ,1968
+                                                ,1969
+                                                ,1970)
+and mv_entity_ksm_degrees.program not in ('STUDENT', 'NONGRAD', 'UNK') -- not student, nongrad, unknown
+and mv_entity.primary_record_type = 'Alum' -- alumni
+and mv_special_handling.no_contact is null -- no contact
+and mv_special_handling.no_email_ind is null -- no email
+and mv_entity.is_deceased_indicator = 'N' -- not deceased
+--and mv_entity.lost_indicator = 'N' -- not lost
+order by mv_entity_ksm_degrees.first_masters_year asc
